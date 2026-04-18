@@ -1,0 +1,21 @@
+/**
+ * CSS for the Project 1 main page.
+ *
+ * Since CSS uses a global name space for classes we should use class names
+ * starting with "main-" here.
+ */
+.main-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+.main-topbar-buffer {
+  margin-top: 70px;
+}
+
+.main-grid-item{
+  flex: 1;
+  padding: 10px;
+  overflow: auto;
+}
