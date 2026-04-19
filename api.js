@@ -2,8 +2,9 @@ import axios from "axios";
 // Import mock setup
 //import './mockSetup.js';
 
-export const api = {
-  getUsers: () => fetch('user/list').then(r => r.json()),
-  getUser: (id) => fetch(`/user/${id}`).then(r => r.json()),
-  getPhotos: (id) => fetch(`/photosOfUser/${id}`).then(r => r.json()),
-};
+const api = axios.create({
+  baseURL: "http://localhost:3000",
+
+});
+
+export default api;

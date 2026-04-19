@@ -36,55 +36,57 @@ function isValidObjectId(id) {
  * GET /user/list
  * Returns the list of users.
  */
-const fetchUsers = async () => {
-  const res = await fetch('user/list');
-  if (!res.ok) throw new Error('Failed to fetch users');
-  return res.json();
-};
+app.get('/user/list', async (req, res) => {
+  const users = await User.find({}, 'first_name last_name _id').lean();
+  res.json(users);
+});
 
-export const useUsers = () => {
-  return useQuery({
-    queryKey: ['users'],
-    queryFn: fetchIsers,
-  });
-};
 
 /**
  * GET /user/:id
  * Returns the details of one user.
  */
-const fetchUser = async (id) => {
-  const res = await fetch(`/user/${id}`);
-  if (!res.ok) throw new Error('failed to fetch user');
-  return res.json();
-};
+app.get('/user/:id', async (req, res) => {
+  const user = await User.findById(req.params.id);
+  res.json(user);
+});
 
-export const useUser = (id) => {
-  return useQuery({
-    queryKey: ['user', id],
-    queryFn: () => fetchUser(id),
-    enabled: !!id
-  });
-};
 
 /**
  * GET /photosOfUser/:id
  * Returns all photos of the given user.
  */
-const fetchPhotos = async (id) => {
-  const res = await fetch(`/photosOfUser/${id}`);
-  if (!res.ok) throw new Error('failed to fetch photos');
-  return res.json();
-};
+app.get('/photosOfUser/:id', async (req, res) => {
+  try {
+    const photos = await Photo.find({ user_id: req.params.id }).lean();
+    const users = await User.find({}).lean();
 
-export const usePhotos = (id) => {
-  return useQuery({
-    queryKey: ['photos', id],
-    queryFn: () => fetchPhotos(id),
-    enabled: !!id
-  });
-};
+    const userLookup = {};
+    users.forEach(user => {
+      userLookup[user._id.toString()] = {
+        _id: user._id,
+        first_name: user.first_name,
+        last_name: user.last_name
+      };
+    });
+
+    const result = photos.map(photo => ({
+      ...photo,
+      comments: (photo.comments || []).map(comment => ({
+        _id: comment._id,
+        comment: comment.comment,
+        date_time: comment.date_time,
+        user: userLookup[comment.user_id?.toString()] || null
+      }))
+    }));
+
+    res.json(result);
+  } catch (err) {
+    res.status(500).send(err.message);
+  }
+});
 
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });
+
