@@ -12,6 +12,7 @@ import UserDetail from './components/UserDetail';
 import UserList from './components/UserList';
 import UserPhotos from './components/UserPhotos';
 import api from "./lib/api.js";
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 function Home() {
   const [photo, setPhoto] = useState(null);
@@ -118,8 +119,6 @@ const router = createBrowserRouter([
     children: [
       { index: true, element: <Home /> },
 
-      { path: 'users', element: <UserList /> },
-
       {
         path: 'user/:id',
         element: <UserLayout />,
@@ -132,5 +131,12 @@ const router = createBrowserRouter([
   },
 ]);
 
+const queryClient = new QueryClient();
+
 const root = ReactDOM.createRoot(document.getElementById('photoshareapp'));
-root.render(<RouterProvider router={router} />);
+
+root.render(
+  <QueryClientProvider client={queryClient}>
+    <RouterProvider router={router} />
+  </QueryClientProvider>
+);
