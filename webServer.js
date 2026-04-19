@@ -37,8 +37,12 @@ function isValidObjectId(id) {
  * Returns the list of users.
  */
 app.get('/user/list', async (req, res) => {
-  const users = await User.find({}, 'first_name last_name _id').lean();
-  res.json(users);
+  try {
+    const users = await User.find({}, 'first_name last_name _id').lean();
+    res.json(users);
+  } catch (err) {
+    res.status(500).send(err.message);
+  }
 });
 
 
@@ -47,7 +51,19 @@ app.get('/user/list', async (req, res) => {
  * Returns the details of one user.
  */
 app.get('/user/:id', async (req, res) => {
-  const user = await User.findById(req.params.id);
+  const id = req.params.id;
+
+  if (!isValidObjectId(id)) {
+    return res.status(400).json({ error: 'Invalid user id' });
+  }
+
+  const user = await User.findById(
+    id,
+    'first_name last_name location description occupation _id'
+  ).lean();
+
+  if (!user) return res.status(404).send();
+
   res.json(user);
 });
 
@@ -57,26 +73,35 @@ app.get('/user/:id', async (req, res) => {
  * Returns all photos of the given user.
  */
 app.get('/photosOfUser/:id', async (req, res) => {
+  const id = req.params.id;
+
+  if (!isValidObjectId(id)) {
+    return res.status(400).json({ error: 'Invalid user id' });
+  }
+
   try {
-    const photos = await Photo.find({ user_id: req.params.id }).lean();
+    const photos = await Photo.find({ user_id: id }).lean();
     const users = await User.find({}).lean();
 
     const userLookup = {};
-    users.forEach(user => {
-      userLookup[user._id.toString()] = {
-        _id: user._id,
-        first_name: user.first_name,
-        last_name: user.last_name
+    users.forEach(u => {
+      userLookup[u._id.toString()] = {
+        _id: u._id,
+        first_name: u.first_name,
+        last_name: u.last_name
       };
     });
 
     const result = photos.map(photo => ({
-      ...photo,
-      comments: (photo.comments || []).map(comment => ({
-        _id: comment._id,
-        comment: comment.comment,
-        date_time: comment.date_time,
-        user: userLookup[comment.user_id?.toString()] || null
+      _id: photo._id,
+      file_name: photo.file_name,
+      date_time: photo.date_time,
+      user_id: photo.user_id,
+      comments: (photo.comments || []).map(c => ({
+        _id: c._id,
+        comment: c.comment,
+        date_time: c.date_time,
+        user: userLookup[c.user_id?.toString()]
       }))
     }));
 
