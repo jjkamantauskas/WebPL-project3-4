@@ -12,10 +12,6 @@ import userRoutes from './routes/userRoutes.js';
 import photoRoutes from './routes/photoRoutes.js';
 import authRoutes from './routes/authRoutes.js';
 
-app.use('/user', userRoutes);
-app.use('/photos', photoRoutes);
-app.use('/auth', authRoutes);
-
 const app = express();
 
 // define these in env and import in this file
@@ -61,6 +57,12 @@ function requireAuth(req, res, next) {
   }
   next();
 }
+
+app.use('/admin', authRoutes);
+app.use('/user', userRoutes);
+app.use('/user', userRoutes);
+app.use('/photos', photoRoutes);
+app.use('/auth', authRoutes);
 
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
