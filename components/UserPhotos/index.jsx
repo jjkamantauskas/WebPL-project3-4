@@ -3,34 +3,56 @@ import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { Typography, Box } from '@mui/material';
 import api from "../../lib/api.js";
-import { useParams, Link } from "react-router-dom"
-
+import { useParams, Link } from "react-router-dom";
+import { useQuery } from '@tanstack/react-query';
 
 import './styles.css';
 
+const fetchUser = async (id) => {
+  const res = await api.get(`/user/${id}`);
+  return res.data;
+};
+
+const fetchPhotos = async (id) => {
+  const res = await api.get(`/photosOfUser/${id}`);
+  return res.data;
+};
+
 function UserPhotos({ userId }) {
+  const params = useParams();
+  const id = userId || params.userId;
 
-  const { _id } = useParams();
+  const {
+    data: user,
+    isLoading: userLoading,
+    error: userError,
+  }= useQuery({
+    queryKey: ['user', id],
+    queryFn: () => fetchUser(id),
+    enabled: !!id
+  });
 
-  const [user, setUser] = useState(null);
-  const [photos, setPhotos] = useState([]);
+  const {
+    data: photos = [],
+    isLoading: photosLoading,
+    error: photosError,
+  } = useQuery({
+    queryKey: ['photos', id],
+    queryFn: () => fetchPhotos(id),
+    enabled: !!id,
+  });
 
-  useEffect(() => {
-    async function loadUser() {
-      try {
-        const response = await api.get(`/user/${userId}`);
-        const photoRes = await api.get(`/photosOfUser/${userId}`);
-        setUser(response.data);
-        setPhotos(photoRes.data)
-      } catch (err) {
-        console.error(err);
-      }
-    }
+  if (userLoading || photosLoading) {
+    return <Typography>Pardon our dust!</Typography>;
+  }
 
-    loadUser();
-  }, [userId]);
+  if (userError || photosError) {
+    return <Typography color="error">Failed to load data</Typography>;
+  }
 
-  if (!user) return <div>Loading...</div>;
+  if (!user) {
+    return <Typography>No user found</Typography>;
+  }
 
   function formatDateTime(dateString) {
     const date = new Date(dateString);
@@ -62,14 +84,21 @@ function UserPhotos({ userId }) {
           />
           {photo.comments?.map(comment => (
             <div key={comment._id}>
-              <Link to={`/users/${comment.user._id}`}>
-                <strong>
-                  {comment.user.first_name} {comment.user.last_name}
-                </strong>
-              </Link>
+    
+              {comment.user ? (
+                <Link to={`/user/${comment.user._id}`}>
+                  <strong>
+                    {comment.user.first_name} {comment.user.last_name}
+                  </strong>
+                </Link>
+              ) : (
+                <strong>Unknown user</strong>
+              )}
+
               {" "}
               {comment.comment}
-              <div style={{ fontSize: "0.8em", color: "gray"}}>
+
+              <div style={{ fontSize: "0.8em", color: "gray" }}>
                 {formatDateTime(comment.date_time)}
               </div>
             </div>
@@ -83,6 +112,10 @@ function UserPhotos({ userId }) {
 
 UserPhotos.propTypes = {
   userId: PropTypes.string.isRequired,
+};
+
+UserPhotos.propTypes = {
+  userId: PropTypes.string,
 };
 
 export default UserPhotos;

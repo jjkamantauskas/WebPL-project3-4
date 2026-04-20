@@ -13,6 +13,7 @@ import UserList from './components/UserList';
 import UserPhotos from './components/UserPhotos';
 import api from "./lib/api.js";
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { AuthProvider } from './context/authContext';
 
 function Home() {
   const [photo, setPhoto] = useState(null);
@@ -137,6 +138,8 @@ const root = ReactDOM.createRoot(document.getElementById('photoshareapp'));
 
 root.render(
   <QueryClientProvider client={queryClient}>
-    <RouterProvider router={router} />
+    <AuthProvider>
+      <RouterProvider router={router} />
+    </AuthProvider>
   </QueryClientProvider>
 );
