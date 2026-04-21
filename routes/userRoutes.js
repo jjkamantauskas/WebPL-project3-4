@@ -10,7 +10,7 @@ function isValidObjectId(id) {
   return mongoose.Types.ObjectId.isValid(id);
 }
 
-router.get('/list', requireAuth, async (req, res) => {
+router.get('/list', async (req, res) => {
   const users = await User.find({}, 'first_name last_name _id').lean();
   res.json(users);
 });
@@ -33,37 +33,31 @@ router.get('/:id', requireAuth, async (req, res) => {
 });
 
 router.post('/', async (req, res) => {
-  const {
-    login_name,
-    password,
-    first_name,
-    last_name,
-    location,
-    description,
-    occupation
-  } = req.body;
-
   try {
-    // Validate required fields
+    const {
+      login_name,
+      password,
+      first_name,
+      last_name,
+      location,
+      description,
+      occupation
+    } = req.body;
+
     if (!login_name || !password || !first_name || !last_name) {
-      return res.status(400).json({
-        error: 'login_name, password, first_name, and last_name are required'
-      });
+      return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    // Check duplicate username
-    const existingUser = await User.findOne({ login_name });
-
-    if (existingUser) {
-      return res.status(400).json({ error: 'login_name already exists' });
+    const existing = await User.findOne({ login_name });
+    if (existing) {
+      return res.status(400).json({ error: 'Login name already exists' });
     }
 
-    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const newUser = new User({
+    const user = new User({
       login_name,
-      password: hashedPassword,
+      password_digest: hashedPassword,
       first_name,
       last_name,
       location,
@@ -71,15 +65,21 @@ router.post('/', async (req, res) => {
       occupation
     });
 
-    await newUser.save();
+    await user.save();
 
-    // remove password before returning
-    const { password: _, ...safeUser } = newUser.toObject();
+    res.status(201).json({
+      _id: user._id,
+      login_name: user.login_name,
+      first_name: user.first_name,
+      last_name: user.last_name
+    });
 
-    res.status(200).json(safeUser);
   } catch (err) {
-    res.status(500).send(err.message);
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
   }
 });
+
+
 
 export default router;

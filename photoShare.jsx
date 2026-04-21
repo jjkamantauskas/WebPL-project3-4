@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useMemo } from 'react';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import ReactDOM from 'react-dom/client';
 import { Grid, Typography, Paper, Box } from '@mui/material';
@@ -11,61 +11,86 @@ import TopBar from './components/TopBar';
 import UserDetail from './components/UserDetail';
 import UserList from './components/UserList';
 import UserPhotos from './components/UserPhotos';
+import LoginRegister from './components/LoginRegister';
 import api from "./lib/api.js";
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query';
 import { AuthProvider } from './context/authContext';
+import ProtectedRoute from './components/protectedRoute';
 
 function Home() {
-  const [photo, setPhoto] = useState(null);
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    async function loadFeaturedPhoto(){
-      try{
-        const userRes = await api.get("/user/list");
-        console.log("full response: ", userRes);
-        const users = userRes.data;
-
-        const randomUser = users[Math.floor(Math.random() * users.length)];
-        console.log(randomUser);
-
-        const photoRes = await api.get(`/photosOfUser/${randomUser._id}`);
-        console.log(photoRes);
-        const photos = photoRes.data;
-
-        const featuredPhoto = photos[Math.floor(Math.random()*photos.length)];
-        console.log(featuredPhoto)
-
-        setUser(randomUser);
-        setPhoto(featuredPhoto);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
+  const {
+    data: users,
+    isLoading: usersLoading,
+    error: usersError
+  } = useQuery({
+    queryKey: ['users'],
+    queryFn: async () => {
+      const res = await api.get('/user/list');
+      return res.data;
     }
+  });
 
-    loadFeaturedPhoto();
-  }, []);
+  const randomUser = useMemo(() => {
+    if (!users?.length) return null;
+    return users[Math.floor(Math.random() * users.length)];
+  }, [users]);
 
-  if (loading) return <div>Loading...</div>
-  if (!photo || !user) return <div>No Featured Photo Currently! Try Uploading One Of Your Own!</div>
+  const {
+    data: photos,
+    isLoading: photosLoading,
+    error: photosError
+  } = useQuery({
+    queryKey: ['photos', randomUser?._id],
+    queryFn: async () => {
+      const res = await api.get(`/photosOfUser/${randomUser._id}`);
+      return res.data;
+    },
+    enabled: !!randomUser //only run when user exists
+  });
+
+  //Pick random photo
+  const featuredPhoto = photos?.length
+    ? photos[Math.floor(Math.random() * photos.length)]
+    : null;
+
+  console.log("PHOTO:", featuredPhoto);
+
+  //loading
+  if (usersLoading || photosLoading) {
+    return <Typography>Loading...</Typography>;
+  }
+
+  //Error state
+  if (usersError || photosError) {
+    return <Typography color="error">Failed to load featured photo</Typography>;
+  }
+
+  //Empty
+  if (!randomUser || !featuredPhoto) {
+    return (
+      <Typography>
+        No Featured Photo Currently! Try Uploading One Of Your Own!
+      </Typography>
+    );
+  }
+  console.log("IMAGE URL:", `/images/${featuredPhoto.file_name}`);
 
   return (
     <Typography variant="body1">
-      <h2>Featured Photo by {user.first_name} {user.last_name}</h2>
-      <div key={photo._id}>
-        <Box
-          component="img"
-          src={`/images/${photo.file_name}`}
-          sx={{
-            width: "100%",
-            borderRadius: 2,
-            mb: 2,
-          }}
-          />
-        </div>
+      <h2>
+        Featured Photo by {randomUser.first_name} {randomUser.last_name}
+      </h2>
+
+      <Box
+        component="img"
+        src={`/images/${featuredPhoto.file_name}`}
+        sx={{
+          width: "100%",
+          borderRadius: 2,
+          mb: 2,
+        }}
+      />
     </Typography>
   );
 }
@@ -118,14 +143,19 @@ const router = createBrowserRouter([
     path: '/',
     element: <Root />,
     children: [
+      { path: 'login', element: <LoginRegister /> },
       { index: true, element: <Home /> },
 
       {
         path: 'user/:id',
-        element: <UserLayout />,
+        element: (
+          <ProtectedRoute>
+            <UserLayout />
+          </ProtectedRoute>
+        ),
         children: [
-          { index: true, element: <UserDetailRoute /> }, // matches /user/:id
-          { path: 'photos', element: <UserPhotosRoute /> }, // matches /user/:id/photos
+          { index: true, element: <UserDetailRoute /> },
+          { path: 'photos', element: <UserPhotosRoute /> },
         ],
       },
     ],

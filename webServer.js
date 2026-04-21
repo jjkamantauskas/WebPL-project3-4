@@ -12,10 +12,12 @@ import userRoutes from './routes/userRoutes.js';
 import photoRoutes from './routes/photoRoutes.js';
 import authRoutes from './routes/authRoutes.js';
 
+import session from 'express-session';
+
 const app = express();
 
 // define these in env and import in this file
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 3001;
 const mongoUrl = 'mongodb://127.0.0.1/project3';
 
 
@@ -28,12 +30,12 @@ app.use(cors({
 app.use(express.json()); //needed for req.body
 
 app.use(session({
-  secret: 'super_secret_key', //TODO: move to env later
+  secret: 'super_secret_key',
   resave: false,
   saveUninitialized: false,
   cookie: {
     httpOnly: true,
-    maxAge: 1000 * 60 * 60
+    sameSite: 'lax',
   }
 }));
 
@@ -58,11 +60,23 @@ function requireAuth(req, res, next) {
   next();
 }
 
+app.post('/admin/login', (req, res, next) => {
+  console.log("LOGIN HIT RAW");
+  next();
+});
+
+app.use((req, res, next) => {
+  console.log("GLOBAL HIT:", req.method, req.url);
+  next();
+});
+
+app.use((req, res, next) => {
+  console.log("SESSION EXISTS?", !!req.session);
+  next();
+});
 app.use('/admin', authRoutes);
 app.use('/user', userRoutes);
-app.use('/user', userRoutes);
-app.use('/photos', photoRoutes);
-app.use('/auth', authRoutes);
+app.use('/', photoRoutes);
 
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
