@@ -1,13 +1,20 @@
 /* eslint-disable import/no-extraneous-dependencies */
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
-import path from "path";
+import path from 'path';
 
 export default defineConfig({
   plugins: [react()],
   server: {
-    port: 3001,
+    port: 3000,
     open: true,
+    proxy: {
+      // Forward /images/* to the Express server so relative image URLs work
+      '/images': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+    },
   },
   build: {
     outDir: 'dist',
@@ -15,7 +22,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "project1")
-    }
+      '@': path.resolve(__dirname, 'src'),
+    },
   },
 });

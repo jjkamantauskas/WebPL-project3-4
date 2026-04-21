@@ -1,118 +1,79 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import PropTypes from 'prop-types';
 import { Typography, Box } from '@mui/material';
-import api from "../../lib/api.js";
-import { useParams, Link } from "react-router-dom";
 import { useQuery } from '@tanstack/react-query';
+import { useParams, Link } from 'react-router-dom';
+import api from '../../lib/api.js';
 
 import './styles.css';
 
-const fetchUser = async (id) => {
-  const res = await api.get(`/user/${id}`);
-  return res.data;
-};
+const fetchUser = (id) => api.get(`/user/${id}`).then((r) => r.data);
+const fetchPhotos = (id) => api.get(`/photosOfUser/${id}`).then((r) => r.data);
 
-const fetchPhotos = async (id) => {
-  const res = await api.get(`/photosOfUser/${id}`);
-  return res.data;
-};
+function formatDateTime(dateString) {
+  const date = new Date(dateString);
+  return `${date.toLocaleDateString('en-US')} ${date.toLocaleTimeString('en-US', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
+  })}`;
+}
 
 function UserPhotos({ userId }) {
   const params = useParams();
-  const id = userId || params.userId;
+  const id = userId || params.id;
 
-  const {
-    data: user,
-    isLoading: userLoading,
-    error: userError,
-  }= useQuery({
+  const { data: user, isLoading: userLoading, error: userError } = useQuery({
     queryKey: ['user', id],
     queryFn: () => fetchUser(id),
-    enabled: !!id
+    enabled: !!id,
   });
 
-  const {
-    data: photos = [],
-    isLoading: photosLoading,
-    error: photosError,
-  } = useQuery({
+  const { data: photos = [], isLoading: photosLoading, error: photosError } = useQuery({
     queryKey: ['photos', id],
     queryFn: () => fetchPhotos(id),
     enabled: !!id,
   });
 
-  if (userLoading || photosLoading) {
-    return <Typography>Pardon our dust!</Typography>;
-  }
-
-  if (userError || photosError) {
-    return <Typography color="error">Failed to load data</Typography>;
-  }
-
-  if (!user) {
-    return <Typography>No user found</Typography>;
-  }
-
-  function formatDateTime(dateString) {
-    const date = new Date(dateString);
-
-    const formattedDate = date.toLocaleDateString("en-US");
-    const formattedTime = date.toLocaleTimeString("en-US", {
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: true,
-    });
-
-    return `${formattedDate} ${formattedTime}`
-  }
+  if (userLoading || photosLoading) return <Typography>Loading...</Typography>;
+  if (userError || photosError) return <Typography color="error">Failed to load data</Typography>;
+  if (!user) return <Typography>No user found</Typography>;
 
   return (
-    <Typography variant="body1">
+    <Typography variant="body1" component="div">
       <h2>{user.first_name} {user.last_name}</h2>
 
-      {photos.map(photo => (
+      {photos.map((photo) => (
         <div key={photo._id}>
           <Box
             component="img"
             src={`/images/${photo.file_name}`}
-            sx={{
-              width: "100%",
-              borderRadius: 2,
-              mb: 2,
-            }}
+            sx={{ width: '100%', borderRadius: 2, mb: 1 }}
           />
-          {photo.comments?.map(comment => (
+
+          {photo.comments?.map((comment) => (
             <div key={comment._id}>
-    
               {comment.user ? (
                 <Link to={`/user/${comment.user._id}`}>
-                  <strong>
-                    {comment.user.first_name} {comment.user.last_name}
-                  </strong>
+                  <strong>{comment.user.first_name} {comment.user.last_name}</strong>
                 </Link>
               ) : (
                 <strong>Unknown user</strong>
               )}
-
-              {" "}
-              {comment.comment}
-
-              <div style={{ fontSize: "0.8em", color: "gray" }}>
+              {' '}{comment.comment}
+              <div style={{ fontSize: '0.8em', color: 'gray' }}>
                 {formatDateTime(comment.date_time)}
               </div>
             </div>
           ))}
+
+          <Box sx={{ mb: 3 }} />
         </div>
       ))}
     </Typography>
   );
-
 }
-
-UserPhotos.propTypes = {
-  userId: PropTypes.string.isRequired,
-};
 
 UserPhotos.propTypes = {
   userId: PropTypes.string,
