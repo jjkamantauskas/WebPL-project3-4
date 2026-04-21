@@ -1,32 +1,39 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import PropTypes from 'prop-types';
 import { Typography } from '@mui/material';
+import { useQuery } from '@tanstack/react-query';
 import api from "../../lib/api.js";
 import { useParams, Link } from "react-router-dom"
 
 import './styles.css';
 
+const fetchUser = async (id) => {
+  const response = await api.get(`/user/${id}`);
+  return response.data;
+};
+
 function UserDetail({ userId }) {
-  console.log("params: ", useParams());
+  const params = useParams();
+  const id = userId || params.userId;
 
-  const [user, setUser] = useState(null);
+  const { data: user, isLoading, error } = useQuery({
+    queryKey: ['user', id],
+    queryFn: () => fetchUser(id),
+    enabled: !!id
+  });
 
-  useEffect(() => {
-    async function loadUser() {
-      try {
-        const response = await api.get(`/user/${userId}`);
-        setUser(response.data);
-      } catch (err) {
-        console.error(err);
-      }
-    }
+  if (isLoading) {
+    return <Typography>Loading user...</Typography>;
+  }
 
-    loadUser();
-  }, [userId]);
-  //userdatail should provide a link for user photos
+  if (error) {
+    return <Typography color="error">Failed to load user</Typography>;
+  }
 
-  if (!user) return <div>Looking for User</div>
+  if (!user) {
+    return <Typography>Looking for User</Typography>;
+  }
 
   return (
     <Typography variant="body1">
@@ -48,5 +55,8 @@ function UserDetail({ userId }) {
 //          descr
 //        occupation
 
+UserDetail.propTypes = {
+  userId: PropTypes.string
+};
 
 export default UserDetail;

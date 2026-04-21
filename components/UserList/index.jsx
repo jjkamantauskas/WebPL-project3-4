@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import {
   Divider,
   List,
@@ -7,27 +7,30 @@ import {
   Typography,
 } from '@mui/material';
 import api from "../../lib/api.js";
-import { Link } from "react-router-dom"
+import { Link } from "react-router-dom";
+import { useQuery } from '@tanstack/react-query';
 
 import './styles.css';
 
+const fetchUsers = async () => {
+  const response = await api.get('/user/list');
+  return response.data;
+};
+
+
 function UserList() {
-  const [users, setUsers] = useState([])
+  const { data: users = [], isLoading, error } = useQuery({
+    queryKey: ['users'],
+    queryFn: fetchUsers,
+  });
 
-  useEffect(() => {
-    async function loadUsers() {
-      try {
-        const response = await api.get('/user/list');
-        console.log(response)
-        setUsers(response.data);
-        console.log(users);
-      } catch (err) {
-        console.error(err);
-      }
-    }
+  if (isLoading) {
+    return <Typography>Loading users...</Typography>;
+  }
 
-    loadUsers();
-  }, []);
+  if (error) {
+    return <Typography color="error">Failed to load users</Typography>;
+  }
 
   return (
     <div>
