@@ -3,8 +3,8 @@ import axios from "axios";
 //import './mockSetup.js';
 
 const api = axios.create({
-  baseURL: "http://localhost:3001",
-  withCredentials: true,
+  baseURL: "http://localhost:3000",
+
 });
 
 export default api;

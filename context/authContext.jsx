@@ -9,7 +9,8 @@ export function AuthProvider({ children }) {
   return (
     <AuthContext.Provider
       value={{
-        user: data?.user || null,
+        // /admin/me returns the user object directly (not wrapped in { user: ... })
+        user: data|| null,
         loading: isLoading
       }}
     >
