@@ -10,7 +10,7 @@ function isValidObjectId(id) {
   return mongoose.Types.ObjectId.isValid(id);
 }
 
-router.get('/list', async (req, res) => {
+router.get('/list', requireAuth, async (req, res) => {
   const users = await User.find({}, 'first_name last_name _id').lean();
   res.json(users);
 });
@@ -67,7 +67,7 @@ router.post('/', async (req, res) => {
 
     await user.save();
 
-    res.status(201).json({
+    res.status(200).json({
       _id: user._id,
       login_name: user.login_name,
       first_name: user.first_name,
