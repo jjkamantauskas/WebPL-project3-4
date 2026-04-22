@@ -99,10 +99,47 @@ router.post('/photos/new', requireAuth, upload.single('photo'), async (req, res)
     });
 
     await photo.save();
-    res.status(201).json(photo);
+    res.status(200).json(photo);
   } catch (err) {
     // Clean up the uploaded file so we don't leave orphans
     fs.unlinkSync(req.file.path);
+    res.status(500).send(err.message);
+  }
+});
+
+// ── POST /commentsOfPhoto/:photoId ───────────────────────────────────────────
+// Adds a comment to the specified photo. The commenter's user_id is taken from
+// the session so it cannot be spoofed by the client.
+router.post('/commentsOfPhoto/:photoId', requireAuth, async (req, res) => {
+  const { photoId } = req.params;
+  const { comment } = req.body;
+
+  // Validate comment text
+  if (!comment || !comment.trim()) {
+    return res.status(400).json({ error: 'Comment text is required' });
+  }
+
+  if (!isValidObjectId(photoId)) {
+    return res.status(400).json({ error: 'Invalid photo id' });
+  }
+
+  try {
+    const photo = await Photo.findById(photoId);
+
+    if (!photo) {
+      return res.status(404).json({ error: 'Photo not found' });
+    }
+
+    // Push the new comment into the embedded comments array
+    photo.comments.push({
+      comment: comment.trim(),
+      date_time: new Date(),
+      user_id: new mongoose.Types.ObjectId(req.session.user),
+    });
+
+    await photo.save();
+    res.status(200).json(photo);
+  } catch (err) {
     res.status(500).send(err.message);
   }
 });

@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import PropTypes from 'prop-types';
-import { Typography, Box } from '@mui/material';
+import { Typography, Box, TextField, Button } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { useParams, Link } from 'react-router-dom';
 import api from '../../lib/api.js';
+import { useAddComment } from '../../lib/mutations/photoMutations.js';
 
 import './styles.css';
 
@@ -19,6 +20,74 @@ function formatDateTime(dateString) {
     hour12: true,
   })}`;
 }
+
+/**
+ * CommentForm
+ * Renders a text input + submit button for posting a comment on one photo.
+ * Clears itself on success and shows an inline error on failure.
+ */
+function CommentForm({ photoId, userId }) {
+  const [text, setText] = useState('');
+  const [error, setError] = useState('');
+  const addComment = useAddComment(userId);
+
+  const handleSubmit = () => {
+    const trimmed = text.trim();
+    if (!trimmed) {
+      setError('Comment cannot be empty.');
+      return;
+    }
+
+    addComment.mutate(
+      { photoId, comment: trimmed },
+      {
+        onSuccess: () => {
+          setText('');
+          setError('');
+        },
+        onError: (err) => {
+          const msg =
+            err?.response?.data?.error || 'Failed to post comment. Please try again.';
+          setError(msg);
+        },
+      }
+    );
+  };
+
+  return (
+    <Box sx={{ mt: 1, mb: 2 }}>
+      <TextField
+        label="Add a comment"
+        variant="outlined"
+        size="small"
+        fullWidth
+        multiline
+        minRows={1}
+        value={text}
+        onChange={(e) => {
+          setText(e.target.value);
+          if (error) setError('');
+        }}
+        error={!!error}
+        helperText={error}
+        sx={{ mb: 1 }}
+      />
+      <Button
+        variant="contained"
+        size="small"
+        onClick={handleSubmit}
+        disabled={addComment.isPending}
+      >
+        {addComment.isPending ? 'Posting…' : 'Post Comment'}
+      </Button>
+    </Box>
+  );
+}
+
+CommentForm.propTypes = {
+  photoId: PropTypes.string.isRequired,
+  userId: PropTypes.string.isRequired,
+};
 
 function UserPhotos({ userId }) {
   const params = useParams();
@@ -68,7 +137,8 @@ function UserPhotos({ userId }) {
             </div>
           ))}
 
-          <Box sx={{ mb: 3 }} />
+          {/* Comment input for logged-in users */}
+          <CommentForm photoId={photo._id} userId={id} />
         </div>
       ))}
     </Typography>
