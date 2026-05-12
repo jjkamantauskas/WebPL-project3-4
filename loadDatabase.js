@@ -1,128 +1,134 @@
 /**
- * Loads Project 3 demo data into MongoDB using Mongoose.
- * Run: node loadDatabase.js (MongoDB must be running locally)
+ * Loads the Project 4 demo data into MongoDB using Mongoose.
+ * Run: node loadDatabase.js
  *
- * Database: project3. Collections: User, Photo, SchemaInfo (cleared first).
+ * Uses MONGODB_URI when provided, else falls back to local project4 DB.
+ * Collections affected: User, Photo, SchemaInfo. Existing data is cleared.
  *
- * Each user gets login_name = lowercase last_name and password_digest set to
- * the instructor-supplied bcrypt hash (plaintext for login is "password"; see README).
+ * Each seeded user gets login_name = lowercase last_name and password_digest set to the
+ * bcrypt hash below (for bcrypt-based login with plaintext input "weak").
  */
 
+// We use the Mongoose to define the schema stored in MongoDB.
 // eslint-disable-next-line import/no-extraneous-dependencies
 import mongoose from "mongoose";
 // eslint-disable-next-line import/no-extraneous-dependencies
 import bluebird from "bluebird";
 import models from "./modelData/photoApp.js";
+
+// Load the Mongoose schema for Use and Photo
 import User from "./schema/user.js";
 import Photo from "./schema/photo.js";
 import SchemaInfo from "./schema/schemaInfo.js";
+import dotenv from 'dotenv';
+dotenv.config();
 
-/** Bcrypt digest for seeded accounts; bcrypt.compare("password", ...) is true. */
+
+
+
+/** Bcrypt digest for seeded accounts; bcrypt.compare("weak", ...) is true. */
 const SEEDED_PASSWORD_DIGEST =
   "$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi";
 
+const cloudinaryUrls = {
+  "kenobi1.jpg": "https://res.cloudinary.com/megamukil/image/upload/v1776568710/photoapp-seed/kenobi1.jpg",
+  "kenobi2.jpg": "https://res.cloudinary.com/megamukil/image/upload/v1776568711/photoapp-seed/kenobi2.jpg",
+  "kenobi3.jpg": "https://res.cloudinary.com/megamukil/image/upload/v1776568711/photoapp-seed/kenobi3.jpg",
+  "kenobi4.jpg": "https://res.cloudinary.com/megamukil/image/upload/v1776568712/photoapp-seed/kenobi4.jpg",
+  "ludgate1.jpg": "https://res.cloudinary.com/megamukil/image/upload/v1776568712/photoapp-seed/ludgate1.jpg",
+  "malcolm1.jpg": "https://res.cloudinary.com/megamukil/image/upload/v1776568713/photoapp-seed/malcolm1.jpg",
+  "malcolm2.jpg": "https://res.cloudinary.com/megamukil/image/upload/v1776568713/photoapp-seed/malcolm2.jpg",
+  "ouster.jpg": "https://res.cloudinary.com/megamukil/image/upload/v1776568714/photoapp-seed/ouster.jpg",
+  "ripley1.jpg": "https://res.cloudinary.com/megamukil/image/upload/v1776568714/photoapp-seed/ripley1.jpg",
+  "ripley2.jpg": "https://res.cloudinary.com/megamukil/image/upload/v1776568715/photoapp-seed/ripley2.jpg",
+  "took1.jpg": "https://res.cloudinary.com/megamukil/image/upload/v1776568715/photoapp-seed/took1.jpg",
+  "took2.jpg": "https://res.cloudinary.com/megamukil/image/upload/v1776568716/photoapp-seed/took2.jpg",
+};
+
+
 mongoose.Promise = bluebird;
 mongoose.set("strictQuery", false);
-mongoose.connect("mongodb://127.0.0.1/project3", {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
+console.log("MONGO URI:", process.env.MONGODB_URI);
+const mongoUri =
+  process.env.MONGODB_URI || process.env.MONGO_URL || "mongodb://127.0.0.1/project4";
+
+async function main() {
+  await mongoose.connect(mongoUri);
+
+  console.log("Connected DB:", mongoose.connection.name);
+
+  // remove this line (it crashes before ready)
+  // console.log("DB NAME:", mongoose.connection.db.databaseName);
+
+  await Promise.all([
+    User.deleteMany({}),
+    Photo.deleteMany({}),
+    SchemaInfo.deleteMany({}),
+  ]);
+
+  const userModels = models.userListModel();
+  const mapFakeId2RealId = {};
+
+  const userPromises = userModels.map(async (user) => {
+  const userObj = await User.create({
+    first_name: user.first_name,
+    last_name: user.last_name,
+    location: user.location,
+    description: user.description,
+    occupation: user.occupation,
+    login_name: user.last_name.toLowerCase(),
+    password_digest: SEEDED_PASSWORD_DIGEST,
+  });
+
+  mapFakeId2RealId[user._id] = userObj._id;
+
+  console.log(
+    "Adding user:",
+    user.first_name + " " + user.last_name,
+    "with ID",
+    userObj._id
+  );
 });
 
-const removePromises = [
-  User.deleteMany({}),
-  Photo.deleteMany({}),
-  SchemaInfo.deleteMany({}),
-];
+  await Promise.all(userPromises);
 
-Promise.all(removePromises)
-  .then(function () {
-    const userModels = models.userListModel();
-    const mapFakeId2RealId = {};
-    const userPromises = userModels.map(function (user) {
-      return User.create({
-        first_name: user.first_name,
-        last_name: user.last_name,
-        location: user.location,
-        description: user.description,
-        occupation: user.occupation,
-        login_name: user.last_name.toLowerCase(),
-        password_digest: SEEDED_PASSWORD_DIGEST,
-      })
-        .then(function (userObj) {
-          userObj.save();
-          mapFakeId2RealId[user._id] = userObj._id;
-          user.objectID = userObj._id;
-          console.log(
-            "Adding user:",
-            user.first_name + " " + user.last_name,
-            " with ID ",
-            user.objectID
-          );
-        })
-        .catch(function (err) {
-          console.error("Error create user", err);
-        });
-    });
-
-    const allPromises = Promise.all(userPromises).then(function () {
-      const photoModels = [];
-      const userIDs = Object.keys(mapFakeId2RealId);
-      userIDs.forEach(function (id) {
-        photoModels.push(...models.photoOfUserModel(id));
-      });
-
-      const photoPromises = photoModels.map(function (photo) {
-        return Photo.create({
-          file_name: photo.file_name,
-          date_time: photo.date_time,
-          user_id: mapFakeId2RealId[photo.user_id],
-        })
-          .then(function (photoObj) {
-            photo.objectID = photoObj._id;
-            if (photo.comments) {
-              photo.comments.forEach(function (comment) {
-                photoObj.comments = photoObj.comments.concat([
-                  {
-                    comment: comment.comment,
-                    date_time: comment.date_time,
-                    user_id: comment.user.objectID,
-                  },
-                ]);
-                console.log(
-                  "Adding comment of length %d by user %s to photo %s",
-                  comment.comment.length,
-                  comment.user.objectID,
-                  photo.file_name
-                );
-              });
-            }
-            photoObj.save();
-            console.log(
-              "Adding photo:",
-              photo.file_name,
-              " of user ID ",
-              photoObj.user_id
-            );
-          })
-          .catch(function (err) {
-            console.error("Error create photo", err);
-          });
-      });
-      return Promise.all(photoPromises).then(function () {
-        return SchemaInfo.create(models.schemaInfo2())
-          .then(function () {
-            console.log("SchemaInfo object created");
-          })
-          .catch(function (err) {
-            console.error("Error create schemaInfo", err);
-          });
-      });
-    });
-
-    allPromises.then(function () {
-      mongoose.disconnect();
-    });
-  })
-  .catch(function (err) {
-    console.error("Error clearing collections", err);
+  const photoModels = [];
+  Object.keys(mapFakeId2RealId).forEach((id) => {
+    photoModels.push(...models.photoOfUserModel(id));
   });
+
+  const photoPromises = photoModels.map(async (photo) => {
+  const seededPhotoUrl = cloudinaryUrls[photo.file_name];
+
+  const photoObj = await Photo.create({
+    file_name: seededPhotoUrl,
+    date_time: photo.date_time,
+    user_id: mapFakeId2RealId[photo.user_id],
+  });
+
+  if (photo.comments) {
+    for (const comment of photo.comments) {
+      photoObj.comments.push({
+        comment: comment.comment,
+        date_time: comment.date_time,
+        user_id: mapFakeId2RealId[comment.user._id],
+      });
+    }
+
+    await photoObj.save();
+  }
+
+  console.log("Adding photo:", photo.file_name);
+});
+
+  await Promise.all(photoPromises);
+
+  await SchemaInfo.create(models.schemaInfo2());
+  console.log("SchemaInfo object created");
+
+  await mongoose.disconnect();
+}
+
+main().catch((err) => {
+  console.error(err);
+});
