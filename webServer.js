@@ -12,6 +12,8 @@ import Photo from './schema/photo.js';
 import userRoutes from './routes/userRoutes.js';
 import photoRoutes from './routes/photoRoutes.js';
 import authRoutes from './routes/authRoutes.js';
+import dotenv from 'dotenv';
+dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -20,14 +22,7 @@ const app = express();
 
 // Server runs on 3001; Vite dev client runs on 3000 (see vite.config.js)
 const port = process.env.PORT || 3001;
-const mongoUrl = 'mongodb://127.0.0.1/project3';
-
-// Ensure images directory exists and serve it as static files
-const imagesDir = path.join(__dirname, 'images');
-if (!fs.existsSync(imagesDir)) {
-  fs.mkdirSync(imagesDir, { recursive: true });
-}
-app.use('/images', express.static(imagesDir));
+const mongoUrl = process.env.MONGODB_URI;
 
 // Allow requests from the Vite dev client on port 3000
 app.use(cors({

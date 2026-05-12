@@ -84,7 +84,7 @@ function Home() {
 
       <Box
         component="img"
-        src={`/images/${featuredPhoto.file_name}`}
+        src={featuredPhoto.file_name}
         sx={{
           width: "100%",
           borderRadius: 2,
