@@ -1,19 +1,24 @@
 import express from 'express';
 import mongoose from 'mongoose';
+/*
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
+*/
 import Photo from '../schema/photo.js';
 import User from '../schema/user.js';
 import { requireAuth } from '../middleware/auth.js';
-
+/*
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
+*/
 const router = express.Router();
-
-// ── Multer setup ────────────────────────────────────────────────────────────
+router.use((req, res, next) => {
+  console.log("📸 PHOTO ROUTE HIT:", req.method, req.url);
+  next();
+});
+/*/ ── Multer setup ────────────────────────────────────────────────────────────
 const imagesDir = path.join(__dirname, '..', 'images');
 
 const storage = multer.diskStorage({
@@ -35,7 +40,7 @@ const upload = multer({
     cb(ok ? null : new Error('Only image files are allowed'), ok);
   },
 });
-
+*/
 // ── Helpers ─────────────────────────────────────────────────────────────────
 function isValidObjectId(id) {
   return mongoose.Types.ObjectId.isValid(id);
@@ -85,24 +90,29 @@ router.get('/photosOfUser/:id', requireAuth, async (req, res) => {
 // ── POST /photos/new ─────────────────────────────────────────────────────────
 // Requires: multipart/form-data with a single "photo" file field.
 // Ownership is taken from the session — no userId needed in the form body.
-router.post('/photos/new', requireAuth, upload.single('photo'), async (req, res) => {
-  if (!req.file) {
-    return res.status(400).json({ error: 'No image file provided' });
+router.post('/photos', requireAuth, async (req, res) => {
+  const { url } = req.body;
+
+  // Validate URL
+  if (!url || !url.trim()) {
+    return res.status(400).json({
+      error: 'Photo URL is required',
+    });
   }
 
   try {
     const photo = new Photo({
-      file_name: req.file.filename,
+      file_name: url.trim(),
       date_time: new Date(),
       user_id: new mongoose.Types.ObjectId(req.session.user),
       comments: [],
     });
 
     await photo.save();
-    res.status(200).json(photo);
+
+    res.status(201).json(photo);
   } catch (err) {
-    // Clean up the uploaded file so we don't leave orphans
-    fs.unlinkSync(req.file.path);
+    console.error(err);
     res.status(500).send(err.message);
   }
 });

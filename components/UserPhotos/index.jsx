@@ -117,7 +117,7 @@ function UserPhotos({ userId }) {
         <div key={photo._id}>
           <Box
             component="img"
-            src={`/images/${photo.file_name}`}
+            src={photo.file_name}
             sx={{ width: '100%', borderRadius: 2, mb: 1 }}
           />
 

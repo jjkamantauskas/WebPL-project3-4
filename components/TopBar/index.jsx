@@ -1,10 +1,18 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { AppBar, Toolbar, Typography, Box, Button, Snackbar, Alert } from '@mui/material';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 import { useLogout } from '../../lib/mutations/authMutations';
 import { useUploadPhoto } from '../../lib/mutations/photoMutations';
 import { useAuth } from '../../context/authContext';
+
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  CircularProgress,
+} from '@mui/material';
 
 import './styles.css';
 
@@ -15,6 +23,10 @@ function TopBar() {
 
   const { user, loading } = useAuth();
   const { mutate: logoutUser } = useLogout();
+  const [open, setOpen] = useState(false);
+
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [cloudinaryError, setCloudinaryError] = useState('');
 
   // Upload is always for the logged-in user's own photos
   const {
@@ -24,18 +36,10 @@ function TopBar() {
     isError: uploadFailed,
     error: uploadError,
     reset: resetUpload,
-  } = useUploadPhoto(user?._id);
+  } = useUploadPhoto();
 
   const handleLogout = () => {
     logoutUser(undefined, { onSuccess: () => navigate('/login') });
-  };
-
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    resetUpload();
-    uploadPhoto(file);
-    e.target.value = '';
   };
 
   const getTitle = () => {
@@ -44,6 +48,48 @@ function TopBar() {
     if (path.startsWith('/user/')) return 'User Detail';
     if (path.startsWith('/users')) return 'Users';
     return 'Featured';
+  };
+
+  const handleUpload = async () => {
+    if (!selectedFile) return;
+
+    try {
+      setCloudinaryError('');
+
+      const formData = new FormData();
+      formData.append('file', selectedFile);
+      formData.append(
+        'upload_preset',
+        import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET
+      );
+
+      const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+
+      // Upload directly to Cloudinary
+      const cloudinaryResponse = await fetch(
+        `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+        {
+          method: 'POST',
+          body: formData,
+        }
+      );
+
+      if (!cloudinaryResponse.ok) {
+        throw new Error('Cloudinary upload failed');
+      }
+
+      const data = await cloudinaryResponse.json();
+
+      // Save secure_url to backend
+      uploadPhoto(data.secure_url, {
+        onSuccess: () => {
+          setOpen(false);
+          setSelectedFile(null);
+        },
+      });
+    } catch (err) {
+      setCloudinaryError(err.message || 'Upload failed');
+    }
   };
 
   return (
@@ -64,15 +110,13 @@ function TopBar() {
                 type="file"
                 accept="image/*"
                 style={{ display: 'none' }}
-                onChange={handleFileChange}
               />
               <Button
                 variant="outlined"
                 color="inherit"
-                disabled={uploading}
-                onClick={() => fileInputRef.current?.click()}
+                onClick={() => setOpen(true)}
               >
-                {uploading ? 'Uploading…' : 'Add Photo'}
+                Add Photo
               </Button>
 
               <Typography>Hi {user.first_name}</Typography>
@@ -90,6 +134,41 @@ function TopBar() {
           )}
         </Box>
       </Toolbar>
+
+      <Dialog open={open} onClose={() => setOpen(false)}>
+        <DialogTitle>Upload Photo</DialogTitle>
+
+        <DialogContent>
+          <input
+            type="file"
+            accept="image/*"
+            onChange={(e) => setSelectedFile(e.target.files[0])}
+          />
+
+          {cloudinaryError && (
+            <Alert severity="error" sx={{ mt: 2 }}>
+              {cloudinaryError}
+            </Alert>
+          )}
+        </DialogContent>
+
+        <DialogActions>
+          <Button onClick={() => setOpen(false)}>
+            Cancel
+          </Button>
+
+          <Button
+            onClick={handleUpload}
+            disabled={!selectedFile || uploading}
+          >
+            {uploading ? (
+              <CircularProgress size={20} color="inherit" />
+            ) : (
+              'Upload'
+            )}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* Upload feedback — Snackbar so it doesn't shift layout */}
       <Snackbar
