@@ -26,8 +26,11 @@ const mongoUrl = process.env.MONGODB_URI;
 
 // Allow requests from the Vite dev client on port 3000
 app.use(cors({
-  origin: 'http://localhost:3000',
-  credentials: true,
+  origin: [
+    "http://localhost:3001",
+    "https://ttps://web-pl-project3-4.vercel.app/
+  ],
+  credentials: true
 }));
 
 app.use(express.json());
