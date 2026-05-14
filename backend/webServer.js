@@ -24,6 +24,9 @@ const app = express();
 const port = process.env.PORT || 3001;
 const mongoUrl = process.env.MONGODB_URI;
 
+//force cors
+const cors = require("cors");
+
 // Allow requests from the Vite dev client on port 3000
 app.use(cors({
   origin: [
