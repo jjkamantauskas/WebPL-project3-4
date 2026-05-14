@@ -17,4 +17,4 @@ COPY . .
 EXPOSE 3001
 
 # Start server
-CMD ["npm", "run", "server"]
+CMD ["node", "webServer.js"]

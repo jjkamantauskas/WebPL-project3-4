@@ -1,10 +1,13 @@
 import React, { useRef, useState } from 'react';
 import { AppBar, Toolbar, Typography, Box, Button, Snackbar, Alert } from '@mui/material';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 
 import { useLogout } from '../../lib/mutations/authMutations';
 import { useUploadPhoto } from '../../lib/mutations/photoMutations';
 import { useAuth } from '../../context/authContext';
+
+import { useQuery } from '@tanstack/react-query';
+import api from '../../lib/api';
 
 import {
   Dialog,
@@ -27,6 +30,8 @@ function TopBar() {
 
   const [selectedFile, setSelectedFile] = useState(null);
   const [cloudinaryError, setCloudinaryError] = useState('');
+  const params = useParams();
+
 
   // Upload is always for the logged-in user's own photos
   const {
@@ -39,14 +44,37 @@ function TopBar() {
   } = useUploadPhoto();
 
   const handleLogout = () => {
-    logoutUser(undefined, { onSuccess: () => navigate('/login') });
+    logoutUser(undefined, { 
+      onSuccess: () => {
+        navigate('/login');
+      }
+    });
   };
+
+  const userId = params.id;
+
+    const { data: viewedUser } = useQuery({
+    queryKey: ['user', userId],
+    queryFn: async () => {
+      const res = await api.get(`/user/${userId}`);
+      return res.data;
+    },
+    enabled: !!userId,
+  });
 
   const getTitle = () => {
     const path = location.pathname;
-    if (path.endsWith('/photos')) return 'User Photos';
-    if (path.startsWith('/user/')) return 'User Detail';
+
+    if (path.endsWith('/photos') && viewedUser) {
+      return `Photos of ${viewedUser.first_name} ${viewedUser.last_name}`;
+    }
+
+    if (path.startsWith('/user/') && viewedUser) {
+      return `${viewedUser.first_name} ${viewedUser.last_name}`;
+    }
+
     if (path.startsWith('/users')) return 'Users';
+
     return 'Featured';
   };
 
@@ -93,7 +121,7 @@ function TopBar() {
   };
 
   return (
-    <AppBar className="topbar-appBar" position="absolute">
+    <AppBar className="topbar-appBar" position="fixed">
       <Toolbar>
         {/* Left: app name */}
         <Typography variant="h5">PhotoShare</Typography>
