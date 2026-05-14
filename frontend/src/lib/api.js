@@ -3,7 +3,7 @@ import axios from "axios";
 //import './mockSetup.js';
 
 const api = axios.create({
-  baseURL: "http://localhost:3001",
+  baseURL: import.meta.env.VITE_API_BASE_URL,
   withCredentials: true,
 });
 
