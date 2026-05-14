@@ -28,7 +28,7 @@ const mongoUrl = process.env.MONGODB_URI;
 app.use(cors({
   origin: [
     "http://localhost:3001",
-    "https://ttps://web-pl-project3-4.vercel.app/
+    "https://web-pl-project3-4.vercel.app/
   ],
   credentials: true
 }));
