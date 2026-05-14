@@ -24,8 +24,6 @@ const app = express();
 const port = process.env.PORT || 3001;
 const mongoUrl = process.env.MONGODB_URI;
 
-//force cors
-const cors = require("cors");
 
 //cookies req
 app.set("trust proxy", 1);
@@ -34,7 +32,7 @@ app.set("trust proxy", 1);
 app.use(cors({
   origin: [
     "http://localhost:3001",
-    "https://web-pl-project3-4.vercel.app/"
+    "https://web-pl-project3-4.vercel.app"
   ],
   credentials: true
 }));
