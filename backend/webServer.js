@@ -27,6 +27,9 @@ const mongoUrl = process.env.MONGODB_URI;
 //force cors
 const cors = require("cors");
 
+//cookies req
+app.set("trust proxy", 1);
+
 // Allow requests from the Vite dev client on port 3000
 app.use(cors({
   origin: [
