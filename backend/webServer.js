@@ -40,12 +40,14 @@ app.use(cors({
 app.use(express.json());
 
 app.use(session({
-  secret: 'super_secret_key',
+  secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
+  proxy: true,
   cookie: {
     httpOnly: true,
-    sameSite: 'lax',
+    secure: true,
+    sameSite: 'none',
   },
 }));
 
