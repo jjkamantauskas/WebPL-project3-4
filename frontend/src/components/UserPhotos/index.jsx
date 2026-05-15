@@ -1,11 +1,20 @@
 import React, { useState } from 'react';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import PropTypes from 'prop-types';
-import { Typography, Box, TextField, Button } from '@mui/material';
+import {
+  Typography,
+  Box,
+  TextField,
+  Button,
+  IconButton,
+} from '@mui/material';
+import FavoriteIcon from '@mui/icons-material/Favorite';
+import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import { useQuery } from '@tanstack/react-query';
 import { useParams, Link } from 'react-router-dom';
 import api from '../../lib/api.js';
-import { useAddComment } from '../../lib/mutations/photoMutations.js';
+import { useAddComment, useLikePhoto } from '../../lib/mutations/photoMutations.js';
+import { useMe } from '../../lib/queries/useMe.js';
 
 import './styles.css';
 
@@ -22,9 +31,54 @@ function formatDateTime(dateString) {
 }
 
 /**
+ * LikeButton
+ * Displays a heart icon and like count for a single photo.
+ * Filled heart = current user has liked it; outline = not liked.
+ */
+function LikeButton({ photo, ownerId }) {
+  const { data: me } = useMe();
+  const likePhoto = useLikePhoto(ownerId);
+
+  // The likes array contains ObjectId strings after JSON serialization
+  const likes = photo.likes || [];
+  const currentUserId = me?._id?.toString();
+  const hasLiked = currentUserId
+    ? likes.some((id) => id.toString() === currentUserId)
+    : false;
+
+  const handleClick = () => {
+    likePhoto.mutate(photo._id.toString());
+  };
+
+  return (
+    <Box sx={{ display: 'flex', alignItems: 'center', mt: 0.5, mb: 1 }}>
+      <IconButton
+        onClick={handleClick}
+        disabled={!me || likePhoto.isPending}
+        size="small"
+        aria-label={hasLiked ? 'Unlike photo' : 'Like photo'}
+        color={hasLiked ? 'error' : 'default'}
+      >
+        {hasLiked ? <FavoriteIcon fontSize="small" /> : <FavoriteBorderIcon fontSize="small" />}
+      </IconButton>
+      <Typography variant="body2" component="span">
+        {likes.length} {likes.length === 1 ? 'like' : 'likes'}
+      </Typography>
+    </Box>
+  );
+}
+
+LikeButton.propTypes = {
+  photo: PropTypes.shape({
+    _id: PropTypes.string.isRequired,
+    likes: PropTypes.arrayOf(PropTypes.string),
+  }).isRequired,
+  ownerId: PropTypes.string.isRequired,
+};
+
+/**
  * CommentForm
  * Renders a text input + submit button for posting a comment on one photo.
- * Clears itself on success and shows an inline error on failure.
  */
 function CommentForm({ photoId, userId }) {
   const [text, setText] = useState('');
@@ -118,8 +172,12 @@ function UserPhotos({ userId }) {
           <Box
             component="img"
             src={photo.file_name}
+            alt={`Photo by ${user.first_name}`}
             sx={{ width: '100%', borderRadius: 2, mb: 1 }}
           />
+
+          {/* Like button with count */}
+          <LikeButton photo={photo} ownerId={id} />
 
           {photo.comments?.map((comment) => (
             <div key={comment._id}>

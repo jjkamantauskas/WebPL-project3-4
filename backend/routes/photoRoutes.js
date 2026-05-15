@@ -41,6 +41,7 @@ const upload = multer({
   },
 });
 */
+
 // ── Helpers ─────────────────────────────────────────────────────────────────
 function isValidObjectId(id) {
   return mongoose.Types.ObjectId.isValid(id);
@@ -73,6 +74,8 @@ router.get('/photosOfUser/:id', requireAuth, async (req, res) => {
       file_name: photo.file_name,
       date_time: photo.date_time,
       user_id: photo.user_id,
+      // Include likes array so the frontend can compute count and current-user state
+      likes: photo.likes || [],
       comments: (photo.comments || []).map((c) => ({
         _id: c._id,
         comment: c.comment,
@@ -87,17 +90,14 @@ router.get('/photosOfUser/:id', requireAuth, async (req, res) => {
   }
 });
 
-// ── POST /photos/new ─────────────────────────────────────────────────────────
-// Requires: multipart/form-data with a single "photo" file field.
-// Ownership is taken from the session — no userId needed in the form body.
+// ── POST /photos ─────────────────────────────────────────────────────────────
+// Accepts a JSON body with a `url` field (Cloudinary URL).
+// Creates a new photo document associated with the logged-in user.
 router.post('/photos', requireAuth, async (req, res) => {
   const { url } = req.body;
 
-  // Validate URL
   if (!url || !url.trim()) {
-    return res.status(400).json({
-      error: 'Photo URL is required',
-    });
+    return res.status(400).json({ error: 'Photo URL is required' });
   }
 
   try {
@@ -106,11 +106,54 @@ router.post('/photos', requireAuth, async (req, res) => {
       date_time: new Date(),
       user_id: new mongoose.Types.ObjectId(req.session.user),
       comments: [],
+      likes: [],
     });
 
     await photo.save();
-
     res.status(201).json(photo);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send(err.message);
+  }
+});
+
+// ── POST /photos/:photoId/like ───────────────────────────────────────────────
+// Toggles the like status for the currently logged-in user on the given photo.
+// - If the user has NOT liked the photo → adds their _id to the likes array ($addToSet).
+// - If the user HAS already liked the photo → removes their _id ($pull).
+// Returns the updated photo object, or 404 if the photo doesn't exist.
+router.post('/photos/:photoId/like', requireAuth, async (req, res) => {
+  const { photoId } = req.params;
+  const userId = req.session.user;
+
+  if (!isValidObjectId(photoId)) {
+    return res.status(400).json({ error: 'Invalid photo id' });
+  }
+
+  try {
+    const photo = await Photo.findById(photoId);
+
+    if (!photo) {
+      return res.status(404).json({ error: 'Photo not found' });
+    }
+
+    const userObjectId = new mongoose.Types.ObjectId(userId);
+    // Check whether the user has already liked this photo
+    const alreadyLiked = photo.likes.some(
+      (id) => id.toString() === userId.toString()
+    );
+
+    if (alreadyLiked) {
+      // Unlike: remove the user's _id from the likes array
+      await Photo.findByIdAndUpdate(photoId, { $pull: { likes: userObjectId } });
+    } else {
+      // Like: add the user's _id (no duplicates thanks to $addToSet)
+      await Photo.findByIdAndUpdate(photoId, { $addToSet: { likes: userObjectId } });
+    }
+
+    // Return the freshly updated photo
+    const updatedPhoto = await Photo.findById(photoId).lean();
+    res.json(updatedPhoto);
   } catch (err) {
     console.error(err);
     res.status(500).send(err.message);
@@ -123,7 +166,6 @@ router.post('/photos', requireAuth, async (req, res) => {
 router.post('/commentsOfPhoto/:photoId', requireAuth, async (req, res) => {
   const { photoId } = req.params;
   const { comment } = req.body;
-
   // Validate comment text
   if (!comment || !comment.trim()) {
     return res.status(400).json({ error: 'Comment text is required' });
@@ -139,7 +181,6 @@ router.post('/commentsOfPhoto/:photoId', requireAuth, async (req, res) => {
     if (!photo) {
       return res.status(404).json({ error: 'Photo not found' });
     }
-
     // Push the new comment into the embedded comments array
     photo.comments.push({
       comment: comment.trim(),

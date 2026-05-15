@@ -4,6 +4,7 @@ import { requireAuth } from '../middleware/auth.js';
 import bcrypt from 'bcrypt';
 import User from '../schema/user.js';
 
+
 const router = express.Router();
 
 function isValidObjectId(id) {

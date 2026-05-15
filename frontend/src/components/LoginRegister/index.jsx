@@ -51,13 +51,13 @@ function LoginRegister() {
     }
   };
 
-  if (loading) return <Typography>Loading...</Typography>;
-
   useEffect(() => {
-    if (user) {
-        navigate('/');
-    }
-  }, [user, navigate]);
+  if (user) {
+      navigate('/');
+  }
+}, [user, navigate]);
+
+if (loading) return <Typography>Loading...</Typography>;
 
   return (
     <Typography variant="body1">

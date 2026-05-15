@@ -9,6 +9,7 @@ import {
 import api from "../../lib/api.js";
 import { Link } from "react-router-dom";
 import { useQuery } from '@tanstack/react-query';
+import { useAuth } from '../../context/authContext';  // ADD THIS
 
 import './styles.css';
 
@@ -17,11 +18,13 @@ const fetchUsers = async () => {
   return response.data;
 };
 
-
 function UserList() {
+  const { user } = useAuth();  // ADD THIS
+
   const { data: users = [], isLoading, error } = useQuery({
     queryKey: ['users'],
     queryFn: fetchUsers,
+    enabled: !!user,  // ADD THIS - only fetch when logged in
   });
 
   if (isLoading) {
@@ -43,14 +46,12 @@ function UserList() {
             <ListItem component={Link} to={`/user/${user._id}`}>
               <ListItemText primary={`${user.first_name} ${user.last_name}`} />
             </ListItem>
-          <Divider />
-        </React.Fragment>
-      ))}
+            <Divider />
+          </React.Fragment>
+        ))}
       </List>
     </div>
   );
 }
-
-//turn into links that change the URL, provides full details of user
 
 export default UserList;
