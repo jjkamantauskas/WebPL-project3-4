@@ -1,0 +1,2 @@
+vercel: https://web-pl-project3-4.vercel.app/
+render: https://webpl-project3-4.onrender.com/
