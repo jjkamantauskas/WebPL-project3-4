@@ -51,7 +51,10 @@ function LikeButton({ photo, ownerId }) {
   };
 
   return (
-    <Box sx={{ display: 'flex', alignItems: 'center', mt: 0.5, mb: 1 }}>
+    <Box sx={{
+      display: 'flex', alignItems: 'center', mt: 0.5, mb: 1,
+    }}
+    >
       <IconButton
         onClick={handleClick}
         disabled={!me || likePhoto.isPending}
@@ -62,7 +65,9 @@ function LikeButton({ photo, ownerId }) {
         {hasLiked ? <FavoriteIcon fontSize="small" /> : <FavoriteBorderIcon fontSize="small" />}
       </IconButton>
       <Typography variant="body2" component="span">
-        {likes.length} {likes.length === 1 ? 'like' : 'likes'}
+        {likes.length}
+        {' '}
+        {likes.length === 1 ? 'like' : 'likes'}
       </Typography>
     </Box>
   );
@@ -100,11 +105,10 @@ function CommentForm({ photoId, userId }) {
           setError('');
         },
         onError: (err) => {
-          const msg =
-            err?.response?.data?.error || 'Failed to post comment. Please try again.';
+          const msg = err?.response?.data?.error || 'Failed to post comment. Please try again.';
           setError(msg);
         },
-      }
+      },
     );
   };
 
@@ -165,7 +169,11 @@ function UserPhotos({ userId }) {
 
   return (
     <Typography variant="body1" component="div">
-      <h2>{user.first_name} {user.last_name}</h2>
+      <h2>
+        {user.first_name}
+        {' '}
+        {user.last_name}
+      </h2>
 
       {photos.map((photo) => (
         <div key={photo._id}>
@@ -183,12 +191,17 @@ function UserPhotos({ userId }) {
             <div key={comment._id}>
               {comment.user ? (
                 <Link to={`/user/${comment.user._id}`}>
-                  <strong>{comment.user.first_name} {comment.user.last_name}</strong>
+                  <strong>
+                    {comment.user.first_name}
+                    {' '}
+                    {comment.user.last_name}
+                  </strong>
                 </Link>
               ) : (
                 <strong>Unknown user</strong>
               )}
-              {' '}{comment.comment}
+              {' '}
+              {comment.comment}
               <div style={{ fontSize: '0.8em', color: 'gray' }}>
                 {formatDateTime(comment.date_time)}
               </div>

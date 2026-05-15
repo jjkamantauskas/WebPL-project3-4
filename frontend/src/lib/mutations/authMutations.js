@@ -1,19 +1,17 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { login, logout } from '../auth';
-import { register } from '../auth';
+import { login, logout, register } from '../auth';
 
 // LOGIN
 export function useLogin() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ login_name, password }) =>
-      login(login_name, password),
+    mutationFn: ({ login_name, password }) => login(login_name, password),
 
     onSuccess: (data) => {
       // 🔥 keep UI in sync
       queryClient.invalidateQueries({ queryKey: ['me'] });
-    }
+    },
   });
 }
 
@@ -26,11 +24,11 @@ export function useLogout() {
 
     onSuccess: () => {
       queryClient.setQueryData(['me'], null);
-    }
+    },
   });
 }
 
-//registration
+// registration
 export function useRegister() {
   const queryClient = useQueryClient();
 
@@ -39,6 +37,6 @@ export function useRegister() {
 
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['me'] });
-    }
+    },
   });
 }

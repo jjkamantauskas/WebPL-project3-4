@@ -10,9 +10,7 @@
  */
 
 // We use the Mongoose to define the schema stored in MongoDB.
-// eslint-disable-next-line import/no-extraneous-dependencies
 import mongoose from "mongoose";
-// eslint-disable-next-line import/no-extraneous-dependencies
 import bluebird from "bluebird";
 import models from "./modelData/photoApp.js";
 

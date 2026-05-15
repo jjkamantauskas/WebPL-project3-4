@@ -4,7 +4,10 @@
   "description": "",
   "main": "loadDatabase.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node webServer.js",
+    "dev": "nodemon webServer.js",
+    "lint": "eslint .",
+    "test": "cd ../test && npm install && npm test"
   },
   "keywords": [],
   "author": "",
@@ -24,6 +27,8 @@
     "multer": "^2.1.1"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.4",
+    "eslint": "^9.0.0",
     "nodemon": "^3.1.14"
   }
 }

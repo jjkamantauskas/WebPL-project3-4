@@ -6,10 +6,10 @@ import {
   ListItemText,
   Typography,
 } from '@mui/material';
-import api from "../../lib/api.js";
-import { Link } from "react-router-dom";
+import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { useAuth } from '../../context/authContext';  // ADD THIS
+import api from '../../lib/api.js';
+import { useAuth } from '../../context/authContext'; // ADD THIS
 
 import './styles.css';
 
@@ -19,12 +19,12 @@ const fetchUsers = async () => {
 };
 
 function UserList() {
-  const { user } = useAuth();  // ADD THIS
+  const { user } = useAuth(); // ADD THIS
 
   const { data: users = [], isLoading, error } = useQuery({
     queryKey: ['users'],
     queryFn: fetchUsers,
-    enabled: !!user,  // ADD THIS - only fetch when logged in
+    enabled: !!user, // ADD THIS - only fetch when logged in
   });
 
   if (isLoading) {
@@ -41,7 +41,7 @@ function UserList() {
         Users:
       </Typography>
       <List component="nav">
-        {users.map(user => (
+        {users.map((user) => (
           <React.Fragment key={user._id}>
             <ListItem component={Link} to={`/user/${user._id}`}>
               <ListItemText primary={`${user.first_name} ${user.last_name}`} />

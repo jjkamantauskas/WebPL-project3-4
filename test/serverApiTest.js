@@ -30,7 +30,7 @@ const userDetailProperties = [
   "occupation",
 ];
 // Valid properties of the photo model
-const photoProperties = ["file_name", "date_time", "user_id", "_id", "comments"];
+const photoProperties = ["file_name", "date_time", "user_id", "_id", "comments", "likes"];
 // Valid comments properties
 const commentProperties = ["comment", "date_time", "_id", "user"];
 
@@ -52,7 +52,7 @@ describe("Photo App: Server API Tests", function () {
 
   describe("test using model data", function () {
     it("webServer does not import model data", function (done) {
-      fs.readFile("../webServer.js", function (err, data) {
+      fs.readFile("../backend/webServer.js", function (err, data) {
         if (err) throw err;
         const src = data.toString();
         assert(
@@ -388,8 +388,9 @@ describe("Photo App: Server API Tests", function () {
                   "wrong number of photos returned"
                 );
                 _.forEach(real_photos, function (real_photo) {
-                  const matches = _.filter(photos, {
-                    file_name: real_photo.file_name,
+                  const matches = _.filter(photos, function (photoCandidate) {
+                    return photoCandidate.file_name === real_photo.file_name
+                     || photoCandidate.file_name.endsWith('/' + real_photo.file_name);
                   });
                   assert.strictEqual(
                     matches.length,
@@ -408,7 +409,9 @@ describe("Photo App: Server API Tests", function () {
                   );
                   assert.strictEqual(photo.user_id, id);
                   assertEqualDates(photo.date_time, real_photo.date_time);
-                  assert.strictEqual(photo.file_name, real_photo.file_name);
+                  assert(photo.file_name === real_photo.file_name || photo.file_name.endsWith('/' + real_photo.file_name),
+                    'photo file_name should match seeded filename or Cloudinary URL'
+                  );
 
                   if (real_photo.comments) {
                     assert.strictEqual(

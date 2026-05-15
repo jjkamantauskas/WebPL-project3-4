@@ -5,6 +5,6 @@ export function useMe() {
   return useQuery({
     queryKey: ['me'],
     queryFn: getMe,
-    retry: false // don’t spam if not logged in
+    retry: false, // don’t spam if not logged in
   });
 }

@@ -1,21 +1,21 @@
 import React, { useRef, useState } from 'react';
-import { AppBar, Toolbar, Typography, Box, Button, Snackbar, Alert } from '@mui/material';
-import { useLocation, useNavigate, useParams } from 'react-router-dom';
-
-import { useLogout } from '../../lib/mutations/authMutations';
-import { useUploadPhoto } from '../../lib/mutations/photoMutations';
-import { useAuth } from '../../context/authContext';
-
-import { useQuery } from '@tanstack/react-query';
-import api from '../../lib/api';
-
 import {
+  AppBar, Toolbar, Typography, Box, Button, Snackbar, Alert,
+
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
   CircularProgress,
 } from '@mui/material';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
+
+import { useQuery } from '@tanstack/react-query';
+import { useLogout } from '../../lib/mutations/authMutations';
+import { useUploadPhoto } from '../../lib/mutations/photoMutations';
+import { useAuth } from '../../context/authContext';
+
+import api from '../../lib/api';
 
 import './styles.css';
 
@@ -32,7 +32,6 @@ function TopBar() {
   const [cloudinaryError, setCloudinaryError] = useState('');
   const params = useParams();
 
-
   // Upload is always for the logged-in user's own photos
   const {
     mutate: uploadPhoto,
@@ -44,16 +43,16 @@ function TopBar() {
   } = useUploadPhoto();
 
   const handleLogout = () => {
-    logoutUser(undefined, { 
+    logoutUser(undefined, {
       onSuccess: () => {
         navigate('/login');
-      }
+      },
     });
   };
 
   const userId = params.id;
 
-    const { data: viewedUser } = useQuery({
+  const { data: viewedUser } = useQuery({
     queryKey: ['user', userId],
     queryFn: async () => {
       const res = await api.get(`/user/${userId}`);
@@ -88,7 +87,7 @@ function TopBar() {
       formData.append('file', selectedFile);
       formData.append(
         'upload_preset',
-        import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET
+        import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET,
       );
 
       const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
@@ -99,7 +98,7 @@ function TopBar() {
         {
           method: 'POST',
           body: formData,
-        }
+        },
       );
 
       if (!cloudinaryResponse.ok) {
@@ -127,7 +126,10 @@ function TopBar() {
         <Typography variant="h5">PhotoShare</Typography>
 
         {/* Right: title + auth + upload */}
-        <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center', gap: 2 }}>
+        <Box sx={{
+          ml: 'auto', display: 'flex', alignItems: 'center', gap: 2,
+        }}
+        >
           <Typography variant="h6">{getTitle()}</Typography>
 
           {!loading && user && (
@@ -147,7 +149,10 @@ function TopBar() {
                 Add Photo
               </Button>
 
-              <Typography>Hi {user.first_name}</Typography>
+              <Typography>
+                Hi
+                {user.first_name}
+              </Typography>
 
               <Button variant="outlined" color="inherit" onClick={handleLogout}>
                 Logout
