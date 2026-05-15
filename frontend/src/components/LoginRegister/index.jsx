@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Typography, TextField, Button } from '@mui/material';
-import { useLogin, useRegister } from '../../lib/mutations/authMutations';
 import { useNavigate } from 'react-router-dom';
+import { useLogin, useRegister } from '../../lib/mutations/authMutations';
 import { useAuth } from '../../context/authContext';
 
 function LoginRegister() {
@@ -35,29 +35,29 @@ function LoginRegister() {
           last_name,
           location,
           description,
-          occupation
+          occupation,
         },
         {
-          onSuccess: () => navigate('/')
-        }
+          onSuccess: () => navigate('/'),
+        },
       );
     } else {
       loginUser(
         { login_name, password },
         {
-          onSuccess: () => navigate('/')
-        }
+          onSuccess: () => navigate('/'),
+        },
       );
     }
   };
 
   useEffect(() => {
-  if (user) {
+    if (user) {
       navigate('/');
-  }
-}, [user, navigate]);
+    }
+  }, [user, navigate]);
 
-if (loading) return <Typography>Loading...</Typography>;
+  if (loading) return <Typography>Loading...</Typography>;
 
   return (
     <Typography variant="body1">
