@@ -3,8 +3,8 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { Typography } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
-import api from "../../lib/api.js";
-import { useParams, Link } from "react-router-dom"
+import { useParams, Link } from 'react-router-dom';
+import api from '../../lib/api.js';
 
 import './styles.css';
 
@@ -20,7 +20,7 @@ function UserDetail({ userId }) {
   const { data: user, isLoading, error } = useQuery({
     queryKey: ['user', id],
     queryFn: () => fetchUser(id),
-    enabled: !!id
+    enabled: !!id,
   });
 
   if (isLoading) {
@@ -38,25 +38,40 @@ function UserDetail({ userId }) {
   return (
     <Typography variant="body1">
       <React.Fragment key={user._id}>
-          <h1>{`${user.first_name} ${user.last_name}`}</h1>
-          <Link to={`/user/${user._id}/photos`}>
-            View {user.first_name} {user.last_name}'s photos
-          </Link>
-          <p><location>Located at: {user.location}</location></p>
-          <p><occupation>Works as: {user.occupation}</occupation></p>
-          <p><description>{user.description}</description></p>
+        <h1>{`${user.first_name} ${user.last_name}`}</h1>
+        <Link to={`/user/${user._id}/photos`}>
+          View
+          {' '}
+          {user.first_name}
+          {' '}
+          {user.first_name}
+          &apos;s photos
+        </Link>
+        <p>
+          <location>
+            Located at:
+            {user.location}
+          </location>
+        </p>
+        <p>
+          <occupation>
+            Works as:
+            {user.occupation}
+          </occupation>
+        </p>
+        <p><description>{user.description}</description></p>
       </React.Fragment>
     </Typography>
   );
 }
-//FORMAT:
+// FORMAT:
 //       Fname Lname
 //       photos link
 //          descr
 //        occupation
 
 UserDetail.propTypes = {
-  userId: PropTypes.string
+  userId: PropTypes.string,
 };
 
 export default UserDetail;

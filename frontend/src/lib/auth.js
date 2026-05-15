@@ -4,7 +4,7 @@ import api from './api';
 export const login = async (login_name, password) => {
   const res = await api.post('/admin/login', {
     login_name,
-    password
+    password,
   });
   return res.data;
 };
@@ -14,7 +14,7 @@ export const logout = async () => {
   const res = await api.post('/admin/logout');
   return res.data;
 };
-//registration
+// registration
 export const register = async (userData) => {
   const res = await api.post('/user', userData);
   return res.data;
@@ -25,4 +25,3 @@ export const getMe = async () => {
   const res = await api.get('/admin/me');
   return res.data;
 };
-

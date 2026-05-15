@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   createBrowserRouter,
   RouterProvider,
@@ -6,15 +6,16 @@ import {
   useParams,
 } from 'react-router-dom';
 
+import { useQuery } from '@tanstack/react-query';
+import {
+  Box, Grid, Paper, Typography,
+} from '@mui/material';
 import TopBar from './components/TopBar';
 import UserDetail from './components/UserDetail';
 import UserList from './components/UserList';
 import UserPhotos from './components/UserPhotos';
 import LoginRegister from './components/LoginRegister';
 import ProtectedRoute from './components/protectedRoute';
-import { useQuery } from '@tanstack/react-query';
-import { useMemo } from 'react';
-import { Box, Grid, Paper, Typography } from '@mui/material';
 import api from './lib/api';
 
 function Home() {
@@ -22,13 +23,13 @@ function Home() {
   const {
     data: users,
     isLoading: usersLoading,
-    error: usersError
+    error: usersError,
   } = useQuery({
     queryKey: ['users'],
     queryFn: async () => {
       const res = await api.get('/user/list');
       return res.data;
-    }
+    },
   });
 
   // 2. Derive a stable featured user ID (NOT object-based)
@@ -46,14 +47,14 @@ function Home() {
   // 3. Derive featured user object (for display only)
   const featuredUser = useMemo(() => {
     if (!users?.length || !featuredUserId) return null;
-    return users.find(u => u._id === featuredUserId);
+    return users.find((u) => u._id === featuredUserId);
   }, [users, featuredUserId]);
 
   // 4. Fetch photos for featured user
   const {
     data: photos,
     isLoading: photosLoading,
-    error: photosError
+    error: photosError,
   } = useQuery({
     queryKey: ['photos', featuredUserId],
     enabled: !!featuredUserId,
@@ -61,7 +62,7 @@ function Home() {
       const [, userId] = queryKey;
       const res = await api.get(`/photosOfUser/${userId}`);
       return res.data;
-    }
+    },
   });
 
   // 5. Pick deterministic featured photo
@@ -83,15 +84,15 @@ function Home() {
   }
 
   if (usersError || photosError) {
-  console.log("USERS ERROR:", usersError);
-  console.log("PHOTOS ERROR:", photosError);
+    console.log('USERS ERROR:', usersError);
+    console.log('PHOTOS ERROR:', photosError);
 
-  return (
-    <Typography color="error">
-      Failed to load featured photo
-    </Typography>
-  );
-}
+    return (
+      <Typography color="error">
+        Failed to load featured photo
+      </Typography>
+    );
+  }
 
   if (!featuredUserId) {
     return <Typography>No users available</Typography>;
@@ -106,7 +107,11 @@ function Home() {
   return (
     <Box>
       <Typography variant="h5">
-        Featured Photo by {featuredUser.first_name} {featuredUser.last_name}
+        Featured Photo by
+        {' '}
+        {featuredUser.first_name}
+        {' '}
+        {featuredUser.last_name}
       </Typography>
 
       <Box
