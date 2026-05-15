@@ -1,4 +1,3 @@
-
 // eslint-disable-next-line import/no-extraneous-dependencies
 import mongoose from "mongoose";
 
@@ -18,7 +17,7 @@ const commentSchema = new mongoose.Schema({
  * Define the Mongoose Schema for a Photo.
  */
 const photoSchema = new mongoose.Schema({
-  // Name of the file containing the photo (in the project2/images directory).
+  // Name of the file containing the photo (or a Cloudinary URL).
   file_name: String,
   // The date and time when the photo was added to the database.
   date_time: { type: Date, default: Date.now },
@@ -26,6 +25,8 @@ const photoSchema = new mongoose.Schema({
   user_id: mongoose.Schema.Types.ObjectId,
   // Array of comment objects representing the comments made on this photo.
   comments: [commentSchema],
+  // Array of user _id values who have liked this photo. Each user may appear at most once.
+  likes: { type: [mongoose.Schema.Types.ObjectId], default: [] },
 });
 
 /**
